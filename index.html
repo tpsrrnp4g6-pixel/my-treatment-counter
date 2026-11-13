@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17191c"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Мой счётчик">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Мой счётчик здоровья</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#17191c;color:#edf0f2;--panel:#22252a;--line:#3b4048;--muted:#a5abb4;--silver:#c7ccd3}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 16px calc(26px + env(safe-area-inset-bottom));max-width:650px;margin-inline:auto;background:radial-gradient(ellipse at 50% -15%,#343941 0,#1b1e22 42%,#17191c 78%);min-height:100vh}
+header{padding:28px 4px 16px}h1{font-size:28px;letter-spacing:-.6px;margin:0 0 7px;color:#f4f6f8}p{color:var(--muted);line-height:1.5;margin:0;font-size:14px}
+.card{background:linear-gradient(145deg,#272b31,#202328);border:1px solid var(--line);border-radius:20px;padding:17px;margin:13px 0;box-shadow:0 9px 24px #0005}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.name{font-weight:650;font-size:16px;color:#f4f6f8}.sub{font-size:13px;color:var(--muted);margin-top:4px}.count{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+h2{font-size:17px;margin:0 0 13px;color:var(--silver)}button{border:1px solid #626a75;border-radius:13px;padding:12px 15px;font-size:15px;font-weight:650;background:linear-gradient(180deg,#d8dce1,#aeb5be);color:#17191c;min-height:45px}
+button.secondary,button.ghost{background:#30353c;border-color:#4a515b;color:#e5e8ec}button.danger{background:#3a292b;border-color:#70474b;color:#f1c9cc}button:disabled{opacity:.3}
+.counter{display:flex;align-items:center;gap:9px;flex-shrink:0}.counter button{width:43px;padding:0;font-size:22px}
+input,textarea{font:inherit;width:100%;border:1px solid #4a505a;border-radius:12px;padding:12px;background:#171a1e;color:#f1f3f5;outline:none}input::placeholder,textarea::placeholder{color:#818894}textarea{min-height:88px;resize:vertical}
+.field{display:grid;gap:7px;margin:10px 0}.field label{font-size:13px;color:var(--muted)}.water{font-size:28px;font-weight:750;margin:0 0 12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions button{font-size:14px;padding:10px 8px}
+small{display:block;color:var(--muted);line-height:1.5;margin-top:10px}.log{font-size:14px;line-height:1.5;border-top:1px solid #3b4048;padding:10px 0;color:#d8dce1}
+.date{font-weight:600;color:var(--silver);font-size:13px}.hint{background:#252a30;border:1px solid #454c56;border-radius:14px;padding:13px;color:#c1c7cf;font-size:13px;line-height:1.5}
+.med-actions{display:flex;gap:7px;margin-top:13px}.med-actions button{min-height:35px;padding:7px 11px;font-size:12px}.section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 5px}.pill{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:#9ea6b1}
+#addMedForm{display:none;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}#addMedForm.open{display:block}.full{width:100%;margin-top:9px}
+</style></head>
+<body>
+<header><div class="pill">Личный трекер</div><h1>Мой счётчик здоровья</h1><p>Добавляй лекарства и отмечай фактический приём. Приложение ведёт учёт, но не назначает дозировки и расписание.</p></header>
+<div class="card"><div class="row"><h2>Выбранный день</h2><span class="date" id="dateLabel"></span></div><input id="day" type="date" aria-label="Выбрать дату"></div>
+<div class="section-head"><h2>Мои лекарства</h2><span class="pill" id="medCount"></span></div><div id="meds"></div>
+<div class="card"><div class="row"><h2>Добавить лекарство</h2><button class="secondary" id="toggleAdd" type="button">＋ Добавить</button></div>
+<form id="addMedForm"><div class="field"><label for="medName">Название лекарства *</label><input id="medName" maxlength="70" placeholder="Например, витамин D" required></div>
+<div class="field"><label for="medDose">Дозировка / примечание (необязательно)</label><input id="medDose" maxlength="70" placeholder="Например, 1000 МЕ или 1 таблетка"></div>
+<div class="actions"><button type="submit">Сохранить</button><button class="secondary" type="button" id="cancelAdd">Отмена</button></div></form>
+<small>Дозировку указывай по назначению или упаковке. Счётчик не подбирает дозы.</small></div>
+<div class="card"><h2>Вода</h2><div class="water" id="waterTotal">0 мл</div><div class="actions"><button class="secondary" onclick="addWater(-250)">− 250 мл</button><button onclick="addWater(250)">＋ 250 мл</button></div></div>
+<div class="card"><h2>Заметки и самочувствие</h2><textarea id="notes" placeholder="Самочувствие, симптомы, температура, вопросы врачу…"></textarea><small>Сохраняется автоматически на этом устройстве.</small></div>
+<div class="card"><h2>История за день</h2><div id="history"><small>Пока отметок нет.</small></div></div>
+<div class="card"><h2>Резервная копия</h2><div class="actions"><button class="secondary" onclick="exportData()">Скачать копию</button><button class="secondary" onclick="document.getElementById('importFile').click()">Восстановить копию</button></div><input id="importFile" type="file" accept="application/json" hidden><small>В копию входят записи, заметки и список лекарств.</small><button class="danger full" onclick="clearDay()">Очистить выбранный день</button></div>
+<div class="hint">Приложение только фиксирует отметки. Оно не напоминает о приёме, не рассчитывает дозировки и не заменяет назначения врача. Старые записи сохраняются при обновлении.</div>
+<script>
+const DEFAULT_MEDS=[{id:"gram",name:"Граммидин с анестетиком",dose:""},{id:"oki",name:"ОКИ — полоскание",dose:""},{id:"neb",name:"Ингаляция Лазолваном",dose:""}];
+const KEY="treatmentCounterPWA_v1",MEDKEY="treatmentCounterMeds_v1";
+let db={};try{db=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){}
+let meds=DEFAULT_MEDS;try{const s=JSON.parse(localStorage.getItem(MEDKEY)||"null");if(Array.isArray(s))meds=s}catch(e){}
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+let selected=todayISO();const day=document.getElementById("day");day.value=selected;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function save(){localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(MEDKEY,JSON.stringify(meds))}
+function getDay(){if(!db[selected])db[selected]={events:[],water:0,notes:""};if(!Array.isArray(db[selected].events))db[selected].events=[];return db[selected]}
+function timeNow(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}
+function changeMed(id,delta){const d=getDay();if(delta>0){const m=meds.find(x=>x.id===id);if(!m)return;d.events.push({id,label:m.name,dose:m.dose||"",time:timeNow(),at:Date.now()})}else{const i=d.events.map(x=>x.id).lastIndexOf(id);if(i>=0)d.events.splice(i,1)}save();render()}
+function addWater(n){const d=getDay();d.water=Math.max(0,(d.water||0)+n);save();render()}
+function render(){const d=getDay();document.getElementById("dateLabel").textContent=new Date(selected+"T12:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"});document.getElementById("medCount").textContent=meds.length+" шт.";
+document.getElementById("meds").innerHTML=meds.map(m=>{const n=d.events.filter(x=>x.id===m.id).length;return `<section class="card"><div class="row"><div style="min-width:0"><div class="name">${esc(m.name)}</div>${m.dose?`<div class="sub">${esc(m.dose)}</div>`:""}</div><div class="counter"><button class="secondary" onclick="changeMed('${esc(m.id)}',-1)" ${n===0?"disabled":""}>−</button><span class="count">${n}</span><button onclick="changeMed('${esc(m.id)}',1)">＋</button></div></div><div class="med-actions"><button class="ghost" onclick="editMed('${esc(m.id)}')">Изменить</button><button class="ghost" onclick="deleteMed('${esc(m.id)}')">Удалить</button></div></section>`}).join("")||'<div class="card"><small>Пока нет лекарств. Нажми «Добавить».</small></div>';
+document.getElementById("waterTotal").textContent=(d.water||0).toLocaleString("ru-RU")+" мл";document.getElementById("notes").value=d.notes||"";
+const ev=[...d.events].sort((a,b)=>(b.at||0)-(a.at||0));document.getElementById("history").innerHTML=ev.length?ev.map(x=>`<div class="log">${esc(x.time||"")} — ${esc(x.label||meds.find(y=>y.id===x.id)?.name||x.id)} ${x.dose?"· "+esc(x.dose):""}</div>`).join(""):"<small>Пока отметок нет.</small>"}
+function editMed(id){const m=meds.find(x=>x.id===id);if(!m)return;const n=prompt("Название лекарства:",m.name);if(n===null)return;if(!n.trim()){alert("Название не может быть пустым.");return}const d=prompt("Дозировка / примечание:",m.dose||"");if(d===null)return;m.name=n.trim();m.dose=d.trim();save();render()}
+function deleteMed(id){const m=meds.find(x=>x.id===id);if(m&&confirm("Убрать «"+m.name+"» из списка? Старые отметки в истории останутся.")){meds=meds.filter(x=>x.id!==id);save();render()}}
+document.getElementById("toggleAdd").addEventListener("click",()=>{document.getElementById("addMedForm").classList.toggle("open");document.getElementById("medName").focus()});
+document.getElementById("cancelAdd").addEventListener("click",()=>document.getElementById("addMedForm").classList.remove("open"));
+document.getElementById("addMedForm").addEventListener("submit",e=>{e.preventDefault();const name=document.getElementById("medName").value.trim(),dose=document.getElementById("medDose").value.trim();if(!name)return;meds.push({id:"custom_"+Date.now().toString(36),name,dose});save();e.target.reset();e.target.classList.remove("open");render()});
+day.addEventListener("change",()=>{selected=day.value||todayISO();render()});document.getElementById("notes").addEventListener("input",e=>{getDay().notes=e.target.value;save()});
+function exportData(){const blob=new Blob([JSON.stringify({format:"treatment-counter-backup-v2",db,meds},null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="backup-schetchik-zdorovya.json";a.click();URL.revokeObjectURL(url)}
+document.getElementById("importFile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!x||typeof x!=="object")throw Error();if(x.format==="treatment-counter-backup-v2"&&x.db&&Array.isArray(x.meds)){db=x.db;meds=x.meds}else db=x;save();render();alert("Резервная копия восстановлена.")}catch(_){alert("Не удалось прочитать файл копии.")}e.target.value=""});
+function clearDay(){if(confirm("Удалить все отметки и заметки за выбранный день?")){delete db[selected];save();render()}}
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));render();
+</script></body></html>
